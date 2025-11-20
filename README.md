@@ -1,20 +1,5 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+This entire application exists solely because abhay_prjs really, really didn't want to study for BCA manually(not so true , please dont beeliev this line).
 
-# Run and deploy your AI Studio app
+Faced with a mountain of PDFs, syllabus units, and assignments, Abhay did what any peak engineer would do: spent 50 hours building an AI to avoid doing 2 hours of actual homework(valid reaction tbh, abhay a dumbahh lmao).
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/drive/17JBQesyQCDashTVX1jxmmfYA36vjC9MH
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+It is not procrastination(no seriosly it is); it is strategic automation(just use chatgpt dumb). Now, instead of reading the books, we just ask the AI(it can amke mistakes btw, books on the other hand, idk i dont have any). You're welcome.(maybe?)
