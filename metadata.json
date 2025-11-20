@@ -1,0 +1,5 @@
+{
+  "name": "BCA Study Assistant",
+  "description": "A comprehensive AI-powered study companion for BCA students featuring subject management, intelligent Q&A, automated flashcards, and quizzes using Gemini 2.5 Flash.",
+  "requestFramePermissions": []
+}
