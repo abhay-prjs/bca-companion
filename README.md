@@ -1,4 +1,4 @@
-# BCA Study Buddy AI
+# BCA Companion AI
 
 ## The Origin Story (A Tale of Strategic Automation)
 
