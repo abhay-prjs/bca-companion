@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, Subject, AppMode } from '../types';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 interface ChatInterfaceProps {
   subject: Subject;
@@ -12,6 +14,7 @@ interface ChatInterfaceProps {
   setMode: (mode: AppMode) => void;
   isOnline: boolean;
   toggleOnline: () => void;
+  onRefreshContent: () => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -23,7 +26,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   hasContext,
   setMode,
   isOnline,
-  toggleOnline
+  toggleOnline,
+  onRefreshContent
 }) => {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -84,6 +88,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </button>
 
           <button 
+            onClick={onRefreshContent}
+            disabled={isLoading}
+            className={`hidden md:flex items-center space-x-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${isLoading ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600 hover:bg-indigo-50'}`}
+            title="Auto-Generate Missing Notes from Syllabus"
+          >
+            <i className="fas fa-sync-alt"></i>
+            <span className="hidden lg:inline">Refresh Data</span>
+          </button>
+
+          <button 
+            onClick={() => !isLoading && onSendMessage(`Summarize the syllabus for ${subject.name} including key topics from all units.`)}
+            disabled={isLoading}
+            className={`hidden md:flex items-center space-x-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${isLoading ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'}`}
+            title="Generate Syllabus Summary"
+          >
+            <i className="fas fa-file-alt"></i>
+            <span>Summary</span>
+          </button>
+          
+          <button 
+            onClick={() => setMode(AppMode.COMPILER)}
+            className="flex items-center space-x-2 px-2 md:px-3 py-1.5 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+            title="C Programming Lab"
+          >
+            <i className="fas fa-terminal"></i>
+            <span className="hidden md:inline">Lab</span>
+          </button>
+
+          <button 
             onClick={() => setMode(AppMode.FLASHCARDS)}
             className="hidden md:flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
           >
@@ -141,8 +174,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   : 'bg-white border border-gray-100 text-gray-800 rounded-bl-none'}
               `}
             >
-              <div className={`prose text-sm ${msg.role === 'user' ? 'prose-invert' : 'prose-indigo'} max-w-none`}>
-                <ReactMarkdown>{msg.text}</ReactMarkdown>
+              <div className={`prose text-sm ${msg.role === 'user' ? 'prose-invert' : 'prose-indigo'} max-w-none break-words`}>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkMath]} 
+                  rehypePlugins={[rehypeKatex]}
+                >
+                  {msg.text}
+                </ReactMarkdown>
               </div>
               
               {msg.sources && msg.sources.length > 0 && (

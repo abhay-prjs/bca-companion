@@ -277,7 +277,7 @@ export const SEMESTERS: Semester[] = [
           { id: "u4", title: "Unit IV: Integration", isCompleted: false },
           { id: "u5", title: "Unit V: Vector Algebra", isCompleted: false }
         ],
-        systemInstruction: "You are a Math tutor. Provide step-by-step solutions. Use LaTeX formatting for math. Answer directly."
+        systemInstruction: "You are a Math tutor. Provide step-by-step solutions. ALWAYS use LaTeX formatting for math equations. Enclose inline math in single dollar signs (e.g., $x^2$) and block math in double dollar signs (e.g., $$ \\int x dx $$). Ensure all mathematical symbols are properly formatted with LaTeX."
       }
     ]
   },

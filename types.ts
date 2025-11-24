@@ -59,4 +59,5 @@ export enum AppMode {
     CHAT = 'CHAT',
     FLASHCARDS = 'FLASHCARDS',
     QUIZ = 'QUIZ',
+    COMPILER = 'COMPILER',
 }

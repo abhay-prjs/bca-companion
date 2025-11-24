@@ -65,11 +65,12 @@ export const generateChatResponse = async (
     augmentedSystemInstruction += `\n\n[INTERNAL KNOWLEDGE BASE]:\n${knowledgeBase}\n\n[USER NOTES]:\n${contextNotes}`;
     
     if (!isOnline) {
-        augmentedSystemInstruction += `\n\nINSTRUCTION: You are a tutor. Answer the user's question DIRECTLY and CONCISELY using the information provided in the Internal Knowledge Base above. 
-        - DO NOT say "Based on the syllabus", "According to the notes", or "The text mentions". 
-        - Pretend you already know this information.
-        - If the user asks for a specific definition (e.g., "What is getchar?"), give the definition immediately without preamble.
-        - If the information is missing, state "I don't have specific information on that topic in my current database, but generally..." and provide a standard answer.`;
+        augmentedSystemInstruction += `\n\nINSTRUCTION: You are an expert tutor. Answer the user's question DIRECTLY and CONFIDENTLY.
+        - Use the provided Internal Knowledge Base as your primary source of truth for definitions and facts.
+        - DO NOT use meta-phrases like "Based on the syllabus", "According to the notes", "In my database", "I don't have specific info", or "The text mentions".
+        - If the user asks subjective questions (e.g., "hardest topic", "important questions", "summary"), use your best judgment and general academic knowledge to provide a definitive answer without qualifying it.
+        - Pretend you are a teacher who has taught this subject for years.
+        - If the user asks for a specific definition (e.g., "What is getchar?"), give the definition immediately without preamble.`;
     } else {
         augmentedSystemInstruction += `\n\nINSTRUCTION: Answer the user's question. You may use Google Search to supplement your knowledge, but prioritize the Internal Knowledge Base definitions if available. Do not cite the syllabus document itself, just give the answer.`;
     }
@@ -170,5 +171,97 @@ export const generateQuiz = async (
   } catch (error) {
     console.error("Quiz Gen Error:", error);
     return [];
+  }
+};
+
+export const generateSyllabusDetails = async (
+  subjectName: string,
+  units: string[]
+): Promise<string> => {
+  if (!apiKey) return "";
+
+  const prompt = `You are a professor creating comprehensive study notes for the subject: "${subjectName}".
+  
+  The syllabus contains the following units:
+  ${units.map((u, i) => `${i+1}. ${u}`).join('\n')}
+  
+  INSTRUCTION:
+  1. For EACH unit, generate a detailed summary.
+  2. Include key definitions, important concepts, formulas (if math), and code snippets (if programming).
+  3. Organize the output with clear Markdown headers (## Unit Name).
+  4. The goal is to create a "Self-Learning Material" (SLM) that covers the gaps in the student's current notes.
+  5. Be concise but thorough.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash', // Using standard flash for potentially long context generation
+      contents: prompt,
+    });
+    
+    return response.text || "";
+  } catch (error) {
+    console.error("Syllabus Gen Error:", error);
+    return "";
+  }
+};
+
+// --- Compiler & OCR Services ---
+
+export const compileCode = async (code: string, stdin: string = ''): Promise<string> => {
+  if (!apiKey) return "Error: API Key missing.";
+
+  const prompt = `
+  You are a GCC C Compiler Simulator.
+  
+  TASK:
+  Compile and execute the following C code.
+  
+  INPUT CODE:
+  ${code}
+  
+  STANDARD INPUT (stdin):
+  ${stdin || "No input provided"}
+  
+  RULES:
+  1. Output ONLY the program execution result (stdout) or error messages (stderr).
+  2. Do not explain your thought process.
+  3. Do not use markdown blocks in the response.
+  4. If the code expects input (scanf) but none is provided in standard input, simulate the program waiting or erroring out gracefully.
+  5. If there is a syntax error, mimic GCC error output format.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        thinkingConfig: { thinkingBudget: 0 }
+      }
+    });
+    return response.text || "";
+  } catch (error) {
+    console.error("Compiler Error:", error);
+    return "Error: Failed to simulate compilation.";
+  }
+};
+
+export const scanCodeFromImage = async (base64Data: string, mimeType: string): Promise<string> => {
+  if (!apiKey) return "// Error: API Key missing.";
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: base64Data } },
+          { text: "Extract the C code from this image. Return ONLY the raw code. Fix obvious OCR typos if they break C syntax (e.g. '1nt' -> 'int'), but keep logic identical. Do not use markdown backticks." }
+        ]
+      }
+    });
+    return response.text || "// Could not extract code.";
+  } catch (error) {
+    console.error("OCR Error:", error);
+    return "// Error: Failed to scan image.";
   }
 };

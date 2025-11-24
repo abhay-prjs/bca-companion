@@ -3,10 +3,11 @@ import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
 import FlashcardDeck from './components/FlashcardDeck';
 import QuizView from './components/QuizView';
+import CompilerView from './components/CompilerView';
 import AboutModal from './components/AboutModal';
 import { SubjectId, Message, AppMode, Subject, Semester } from './types';
 import { SEMESTERS } from './constants';
-import { generateChatResponse } from './services/geminiService';
+import { generateChatResponse, generateSyllabusDetails } from './services/geminiService';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.SEMESTER_SELECT);
@@ -32,6 +33,42 @@ const App: React.FC = () => {
 
   const currentMessages = activeSubjectId ? (chatHistory[activeSubjectId] || []) : [];
   const currentNotes = activeSubjectId ? (contextNotes[activeSubjectId] || '') : '';
+
+  // Load data from LocalStorage on mount
+  useEffect(() => {
+    try {
+      const savedNotes = localStorage.getItem('bca_context_notes');
+      if (savedNotes) {
+        setContextNotes(JSON.parse(savedNotes));
+      }
+      
+      const savedHistory = localStorage.getItem('bca_chat_history');
+      if (savedHistory) {
+        setChatHistory(JSON.parse(savedHistory));
+      }
+
+      const savedSubjects = localStorage.getItem('bca_subjects_progress');
+      if (savedSubjects) {
+          // We need to merge progress with structure if structure changed, but for now simpler is better
+          // Just loading saved subjects might overwrite code updates if not careful.
+          // Strategy: Load completion status only
+          const parsedSubjects = JSON.parse(savedSubjects) as Subject[];
+          // Logic to apply saved completion to current structure would go here
+          // For MVP, we skip deep merging to avoid complexity, relying on init below
+      }
+    } catch (e) {
+      console.error("Failed to load from local storage", e);
+    }
+  }, []);
+
+  // Save to LocalStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem('bca_context_notes', JSON.stringify(contextNotes));
+  }, [contextNotes]);
+
+  useEffect(() => {
+    localStorage.setItem('bca_chat_history', JSON.stringify(chatHistory));
+  }, [chatHistory]);
 
   // Initialize subjects when semester changes
   useEffect(() => {
@@ -104,6 +141,50 @@ const App: React.FC = () => {
       ...prev,
       [activeSubjectId]: (prev[activeSubjectId] || '') + '\n' + text
     }));
+  };
+
+  const handleRefreshContent = async () => {
+    if (!activeSubjectId || !activeSubject) return;
+    
+    // Confirm with user
+    if (!window.confirm(`Auto-generate detailed study notes for ${activeSubject.name} based on the syllabus? This will update your knowledge base.`)) {
+        return;
+    }
+
+    setIsLoading(true);
+    const unitTitles = activeSubject.units.map(u => u.title);
+    
+    // Add a system message to chat indicating start
+    const startMsg: Message = {
+        id: Date.now().toString(),
+        role: 'model',
+        text: `🔄 **Starting Syllabus Auto-Sync...**\n\nI am analyzing the syllabus units for ${activeSubject.name} and generating comprehensive study notes to update my internal database. This might take a moment...`,
+        timestamp: Date.now()
+    };
+    setChatHistory(prev => ({ ...prev, [activeSubjectId]: [...currentMessages, startMsg] }));
+
+    const generatedNotes = await generateSyllabusDetails(activeSubject.name, unitTitles);
+
+    if (generatedNotes) {
+        handleUploadContext(`\n\n[AUTO-GENERATED SYLLABUS NOTES - ${new Date().toLocaleDateString()}]\n${generatedNotes}`);
+        
+        const endMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            text: `✅ **Sync Complete!**\n\nI have successfully generated and stored detailed notes for all ${unitTitles.length} units. You can now ask me specific questions from the syllabus, and I will use this updated data.`,
+            timestamp: Date.now()
+        };
+        setChatHistory(prev => ({ ...prev, [activeSubjectId]: [...currentMessages, startMsg, endMsg] }));
+    } else {
+        const errorMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            text: `❌ **Sync Failed.**\n\nI couldn't generate the notes at this time. Please try again later.`,
+            timestamp: Date.now()
+        };
+        setChatHistory(prev => ({ ...prev, [activeSubjectId]: [...currentMessages, startMsg, errorMsg] }));
+    }
+    setIsLoading(false);
   };
 
   const handleToggleUnit = (subjectId: SubjectId, unitId: string) => {
@@ -222,6 +303,7 @@ const App: React.FC = () => {
                 setMode={setMode}
                 isOnline={isOnline}
                 toggleOnline={() => setIsOnline(!isOnline)}
+                onRefreshContent={handleRefreshContent}
               />
             )}
             {mode === AppMode.FLASHCARDS && (
@@ -234,6 +316,11 @@ const App: React.FC = () => {
             {mode === AppMode.QUIZ && (
               <QuizView 
                 subjectName={activeSubject.name}
+                onClose={() => setMode(AppMode.CHAT)}
+              />
+            )}
+            {mode === AppMode.COMPILER && (
+              <CompilerView 
                 onClose={() => setMode(AppMode.CHAT)}
               />
             )}

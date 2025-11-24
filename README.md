@@ -1,14 +1,14 @@
-# BCA Companion AI
+# BCA Study Buddy AI
 
 ## The Origin Story (A Tale of Strategic Automation)
 
 Every piece of software is born from a compelling need. For this application, that need was the sheer, overwhelming dread of manually studying for a Bachelor of Computer Applications (BCA).
 
-(Okay, maybe the actual reason wasn't just avoiding study, but hear me out...)
+(Okay, maybe the actual reason wasn't just avoiding study, but hear us out...)
 
 Faced with a mountain of PDFs, unwieldy syllabus units, and never-ending assignments, our developer, **abhay_prjs**, chose the path of the peak engineer: He spent 50 hours building an AI to avoid doing what might have been 2 hours of actual manual homework.
 
-> “It's not procrastination; it's strategic automation.” - abhay_prjs (Probably)(no seriosly it is)
+> “It's not procrastination; it's strategic automation.” - abhay_prjs (Probably)
 
 ## What Does it Do?
 
